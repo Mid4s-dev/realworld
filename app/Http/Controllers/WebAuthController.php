@@ -58,10 +58,34 @@ class WebAuthController extends Controller
     public function logout(Request $request)
     {
         Auth::logout();
-
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+        return redirect('/');
+    }
 
-        return redirect()->route('home');
+    public function updateSettings(Request $request)
+    {
+        $user = $request->user();
+        
+        $request->validate([
+            'username' => 'required|string|max:255|unique:users,username,'.$user->id,
+            'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
+            'password' => 'nullable|string|min:8',
+            'image' => 'nullable|url',
+            'bio' => 'nullable|string',
+        ]);
+
+        $user->username = $request->username;
+        $user->email = $request->email;
+        $user->image = $request->image;
+        $user->bio = $request->bio;
+
+        if ($request->filled('password')) {
+            $user->password = Hash::make($request->password);
+        }
+
+        $user->save();
+
+        return redirect()->route('settings')->with('success', 'Settings updated successfully!');
     }
 }
